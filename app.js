@@ -23,6 +23,7 @@
   var current = 0;
   var inputs = [];      // 현재 화면의 입력 요소
   var finished = false; // 채점·저장이 끝났는지
+  var finalCorrect = 0; // 채점 결과 (저장한 값)
   var onModalOk = null;
 
   // 중복 없이 무작위로 n개 뽑기 (Fisher-Yates)
@@ -105,7 +106,11 @@
       correct: correct,
       pass: correct >= PASS_SCORE
     });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    } catch (e) {
+      // 저장소를 쓸 수 없는 환경(사생활 보호 모드 등)에서도 채점 결과는 보여 준다
+    }
   }
 
   function showRecords() {
@@ -205,12 +210,18 @@
 
   // 채점하고 한 번만 저장
   function finishExam() {
-    var correct = countCorrect();
     if (!finished) {
-      saveRecord(correct);
+      finalCorrect = countCorrect();
+      saveRecord(finalCorrect);
       finished = true;
     }
-    return correct;
+    return finalCorrect;
+  }
+
+  function showResult() {
+    showModal(examQuestions.length + '문제 중 ' + finalCorrect + '문제 정답', {
+      result: finalCorrect >= PASS_SCORE ? 'pass' : 'fail'
+    });
   }
 
   function showAnswer() {
@@ -229,6 +240,10 @@
   }
 
   function nextQuestion() {
+    if (finished) { // 채점 후에는 답을 바꿔도 저장된 결과를 그대로 보여 준다
+      showResult();
+      return;
+    }
     var response = readResponse();
     if (response === null) {
       showModal('답을 하지 않으면 모의고사가 진행되지 않아요');
@@ -237,10 +252,8 @@
     responses[current] = response;
 
     if (current >= examQuestions.length - 1) {
-      var correct = finishExam();
-      showModal(examQuestions.length + '문제 중 ' + correct + '문제 정답', {
-        result: correct >= PASS_SCORE ? 'pass' : 'fail'
-      });
+      finishExam();
+      showResult();
       return;
     }
     current++;

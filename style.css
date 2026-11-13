@@ -156,7 +156,7 @@ body {
 .exam {
   height: 100%;
   display: grid;
-  grid-template-rows: auto 2fr 1fr;
+  grid-template-rows: auto minmax(0, 2fr) minmax(0, 1fr);
 }
 
 .topbar {
@@ -227,6 +227,10 @@ body {
   margin: 3px 0 0;
 }
 
+.option span {
+  min-width: 0;
+}
+
 /* 단답형 입력 */
 .short-input {
   width: 100%;
@@ -266,7 +270,10 @@ body {
 /* 알림창 */
 .modal {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 10;
   display: flex;
   align-items: center;
