@@ -199,3 +199,47 @@ body {
   margin: 0;
   color: #444;
 }
+
+/* 알림창 */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.modal-box {
+  width: 100%;
+  max-width: 320px;
+  padding: 24px 20px 20px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.modal-message {
+  margin: 0 0 20px;
+}
+
+.modal-result {
+  margin: -8px 0 20px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.modal-result.pass {
+  color: #16a34a;
+}
+
+.modal-result.fail {
+  color: #dc2626;
+}
+
+.modal-ok {
+  width: 100%;
+}
