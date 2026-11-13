@@ -89,6 +89,69 @@ body {
   color: #666;
 }
 
+.start-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+
+/* 기록 리스트 화면 */
+.records {
+  height: 100%;
+  overflow-y: auto;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.records h1 {
+  margin: 0 0 16px;
+  font-size: 22px;
+}
+
+.records-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  font-size: 15px;
+  text-align: center;
+}
+
+.records-table th,
+.records-table td {
+  padding: 10px 4px;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.records-table th {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+.records-table .pass {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.records-table .fail {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.records-empty {
+  margin: 0 0 24px;
+  color: #666;
+  text-align: center;
+}
+
+.records .btn-large {
+  display: block;
+  width: 100%;
+}
+
 /* 시험 화면 */
 .exam {
   height: 100%;
@@ -240,6 +303,11 @@ body {
   color: #dc2626;
 }
 
-.modal-ok {
-  width: 100%;
+.modal-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-buttons .btn {
+  flex: 1;
 }

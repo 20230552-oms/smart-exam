@@ -10,7 +10,10 @@
   <section id="start-screen" class="start">
     <h1>스마트공장 수준확인 심사원 모의고사</h1>
     <p>전체 문제 중 25문제를 무작위로 출제합니다.</p>
-    <button type="button" id="start-btn" class="btn btn-primary btn-large">모의고사 시작</button>
+    <div class="start-buttons">
+      <button type="button" id="start-btn" class="btn btn-primary btn-large">모의고사 시작</button>
+      <button type="button" id="records-btn" class="btn btn-large">기록 보기</button>
+    </div>
   </section>
 
   <section id="exam-screen" class="exam" hidden>
@@ -26,11 +29,31 @@
     <aside id="answer-area" class="answer-area"></aside>
   </section>
 
+  <section id="records-screen" class="records" hidden>
+    <h1>기록</h1>
+    <table class="records-table">
+      <thead>
+        <tr>
+          <th>날짜</th>
+          <th>회차</th>
+          <th>맞춘 개수</th>
+          <th>pass 여부</th>
+        </tr>
+      </thead>
+      <tbody id="records-body"></tbody>
+    </table>
+    <p id="records-empty" class="records-empty" hidden>저장된 기록이 없습니다.</p>
+    <button type="button" id="restart-btn" class="btn btn-primary btn-large">새 모의고사 시작</button>
+  </section>
+
   <div id="modal" class="modal" hidden>
     <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="modal-message">
       <p id="modal-message" class="modal-message"></p>
       <p id="modal-result" class="modal-result" hidden></p>
-      <button type="button" id="modal-ok" class="btn btn-primary modal-ok">확인</button>
+      <div class="modal-buttons">
+        <button type="button" id="modal-ok" class="btn btn-primary">확인</button>
+        <button type="button" id="modal-cancel" class="btn" hidden>취소</button>
+      </div>
     </div>
   </div>
 

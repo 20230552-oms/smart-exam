@@ -1,22 +1,29 @@
 (function () {
   var EXAM_SIZE = 25;
   var PASS_SCORE = 18;
+  var STORAGE_KEY = 'smartExamRecords';
   var MARKS = ['①', '②', '③', '④'];
 
   var startScreen = document.getElementById('start-screen');
   var examScreen = document.getElementById('exam-screen');
+  var recordsScreen = document.getElementById('records-screen');
   var progressEl = document.getElementById('progress');
   var questionArea = document.getElementById('question-area');
   var answerArea = document.getElementById('answer-area');
+  var recordsBody = document.getElementById('records-body');
+  var recordsEmpty = document.getElementById('records-empty');
   var modal = document.getElementById('modal');
   var modalMessage = document.getElementById('modal-message');
   var modalResult = document.getElementById('modal-result');
   var modalOk = document.getElementById('modal-ok');
+  var modalCancel = document.getElementById('modal-cancel');
 
   var examQuestions = [];
   var responses = [];   // 문제별 응답: 객관식은 1~4, 단답형은 입력 문자열
   var current = 0;
   var inputs = [];      // 현재 화면의 입력 요소
+  var finished = false; // 채점·저장이 끝났는지
+  var onModalOk = null;
 
   // 중복 없이 무작위로 n개 뽑기 (Fisher-Yates)
   function pickRandom(list, n) {
@@ -37,16 +44,27 @@
     return node;
   }
 
-  // 화면 가운데 알림창. result가 있으면 pass/fail을 크게 표시
-  function showModal(message, result) {
+  function showScreen(screen) {
+    startScreen.hidden = screen !== startScreen;
+    examScreen.hidden = screen !== examScreen;
+    recordsScreen.hidden = screen !== recordsScreen;
+  }
+
+  // 화면 가운데 알림창
+  // options.result: 'pass' 또는 'fail'을 크게 표시
+  // options.onOk: 있으면 [확인] [취소]를 보여 주고, [확인]을 누를 때 실행
+  function showModal(message, options) {
+    options = options || {};
     modalMessage.textContent = message;
-    if (result) {
-      modalResult.textContent = result;
-      modalResult.className = 'modal-result ' + result;
+    if (options.result) {
+      modalResult.textContent = options.result;
+      modalResult.className = 'modal-result ' + options.result;
       modalResult.hidden = false;
     } else {
       modalResult.hidden = true;
     }
+    onModalOk = options.onOk || null;
+    modalCancel.hidden = !onModalOk;
     modal.hidden = false;
     modalOk.focus();
   }
@@ -55,12 +73,64 @@
     modal.hidden = true;
   }
 
+  function confirmModal() {
+    var callback = onModalOk;
+    onModalOk = null;
+    closeModal();
+    if (callback) callback();
+  }
+
+  // ----- 기록 -----
+
+  function loadRecords() {
+    try {
+      var records = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      return Array.isArray(records) ? records : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function today() {
+    var d = new Date();
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  function saveRecord(correct) {
+    var records = loadRecords();
+    records.push({
+      date: today(),
+      round: records.length + 1,
+      correct: correct,
+      pass: correct >= PASS_SCORE
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  }
+
+  function showRecords() {
+    var records = loadRecords().slice().reverse(); // 최신 기록이 위
+    recordsBody.innerHTML = '';
+    records.forEach(function (r) {
+      var tr = el('tr');
+      tr.appendChild(el('td', '', r.date));
+      tr.appendChild(el('td', '', String(r.round)));
+      tr.appendChild(el('td', '', r.correct + '/' + EXAM_SIZE));
+      tr.appendChild(el('td', r.pass ? 'pass' : 'fail', r.pass ? 'pass' : 'fail'));
+      recordsBody.appendChild(tr);
+    });
+    recordsEmpty.hidden = records.length > 0;
+    showScreen(recordsScreen);
+  }
+
+  // ----- 시험 -----
+
   function startExam() {
     examQuestions = pickRandom(window.QUESTIONS, EXAM_SIZE);
     responses = [];
     current = 0;
-    startScreen.hidden = true;
-    examScreen.hidden = false;
+    finished = false;
+    showScreen(examScreen);
     renderQuestion();
   }
 
@@ -117,6 +187,7 @@
   }
 
   function isCorrect(q, response) {
+    if (response === null || response === undefined) return false; // 안 푼 문제는 오답
     if (q.type === 'choice') return response === q.answer;
     var given = normalize(response);
     return q.accepted.some(function (a) {
@@ -124,15 +195,22 @@
     });
   }
 
-  function grade() {
+  function countCorrect() {
     var correct = 0;
     examQuestions.forEach(function (q, i) {
       if (isCorrect(q, responses[i])) correct++;
     });
-    showModal(
-      examQuestions.length + '문제 중 ' + correct + '문제 정답',
-      correct >= PASS_SCORE ? 'pass' : 'fail'
-    );
+    return correct;
+  }
+
+  // 채점하고 한 번만 저장
+  function finishExam() {
+    var correct = countCorrect();
+    if (!finished) {
+      saveRecord(correct);
+      finished = true;
+    }
+    return correct;
   }
 
   function showAnswer() {
@@ -159,16 +237,37 @@
     responses[current] = response;
 
     if (current >= examQuestions.length - 1) {
-      grade();
+      var correct = finishExam();
+      showModal(examQuestions.length + '문제 중 ' + correct + '문제 정답', {
+        result: correct >= PASS_SCORE ? 'pass' : 'fail'
+      });
       return;
     }
     current++;
     renderQuestion();
   }
 
+  function endExam() {
+    if (finished) {
+      showRecords();
+      return;
+    }
+    showModal('지금 종료하면 안 푼 문제는 오답으로 기록됩니다', {
+      onOk: function () {
+        var response = readResponse(); // 현재 화면에서 고른 답도 포함
+        if (response !== null) responses[current] = response;
+        finishExam();
+        showRecords();
+      }
+    });
+  }
+
   document.getElementById('start-btn').addEventListener('click', startExam);
+  document.getElementById('records-btn').addEventListener('click', showRecords);
+  document.getElementById('restart-btn').addEventListener('click', startExam);
   document.getElementById('check-btn').addEventListener('click', showAnswer);
   document.getElementById('next-btn').addEventListener('click', nextQuestion);
-  modalOk.addEventListener('click', closeModal);
-  // [모의종료] 기능은 다음 단계에서 구현
+  document.getElementById('end-btn').addEventListener('click', endExam);
+  modalOk.addEventListener('click', confirmModal);
+  modalCancel.addEventListener('click', closeModal);
 })();
